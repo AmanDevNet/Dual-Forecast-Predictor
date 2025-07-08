@@ -13,12 +13,13 @@ The app provides users with visual predictions through interactive charts and si
   - Location (latitude & longitude)
   - Population
 - Shows price projection for up to 3 years
-- Model used: XGBoost (trained and working)
+- Model used: RandomForestRegressor and XGBoost (trained and working)
 
 ### 📈 Stock Portfolio Forecast (⚠️ In Progress)
 - Lets users select popular stocks (AAPL, MSFT, GOOG, etc.)
 - Takes investment amount and prediction days
 - Aims to project future value and allocation
+- Model used: LSTM (trained and working)
 - ⚠️ **Currently not working** due to model loading issues (under fix)
 
 ## 📁 Folder Structure
