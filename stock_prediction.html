@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Portfolio Prediction | Financial Forecast Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stock.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.13.3/css/selectize.min.css">
+    <style>
+        .error-message {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+        .selectize-control.multi .selectize-input [data-value] {
+            background: #007bff;
+            color: white;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-chart-line"></i> Stock Portfolio Prediction</h1>
+            <nav>
+                <a href="/house"><i class="fas fa-home"></i> House</a>
+                <a href="/stock" class="active"><i class="fas fa-chart-line"></i> Stocks</a>
+            </nav>
+        </header>
+
+        <main class="content">
+            <div class="prediction-form">
+                <h2><i class="fas fa-calculator"></i> Portfolio Parameters</h2>
+                <div id="formError" class="error-message"></div>
+                <form id="stockPredictionForm">
+                    <div class="form-group">
+                        <label for="tickers"><i class="fas fa-coins"></i> Select Stocks:</label>
+                        <select id="tickers" name="tickers" multiple placeholder="Type to search stocks...">
+                            <option value="AAPL">Apple (AAPL)</option>
+                            <option value="MSFT">Microsoft (MSFT)</option>
+                            <option value="GOOG">Alphabet (GOOG)</option>
+                            <option value="AMZN">Amazon (AMZN)</option>
+                            <option value="META">Meta (META)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="investment"><i class="fas fa-money-bill-wave"></i> Investment Amount ($):</label>
+                        <input type="number" id="investment" name="investment" min="100" step="100" value="10000" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="days"><i class="fas fa-calendar-alt"></i> Prediction Period:</label>
+                        <div class="range-container">
+                            <input type="range" id="days" name="days" min="7" max="365" value="30" class="slider">
+                            <span id="daysValue">30 days</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="predict-btn">
+                        <i class="fas fa-search-dollar"></i> Predict Portfolio
+                    </button>
+                </form>
+
+                <div class="model-info">
+                    <h3><i class="fas fa-info-circle"></i> About This Model</h3>
+                    <p>Our LSTM neural network analyzes historical patterns including:</p>
+                    <ul>
+                        <li><i class="fas fa-check-circle"></i> 3 years of price history</li>
+                        <li><i class="fas fa-check-circle"></i> Technical indicators</li>
+                        <li><i class="fas fa-check-circle"></i> Market trends</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="results-container">
+                <div id="apiError" class="error-message"></div>
+                
+                <div class="portfolio-summary">
+                    <h2><i class="fas fa-chart-pie"></i> Portfolio Summary</h2>
+                    <div class="summary-cards">
+                        <!-- Cards remain the same -->
+                    </div>
+                </div>
+
+                <div class="projection-chart">
+                    <h2><i class="fas fa-project-diagram"></i> Portfolio Projection</h2>
+                    <div id="projectionChart">
+                        <p class="placeholder-text">Select stocks and parameters to see projection</p>
+                        <img id="projectionImage" style="display: none;">
+                    </div>
+                </div>
+
+                <div class="stock-breakdown">
+                    <h2><i class="fas fa-chart-bar"></i> Allocation Breakdown</h2>
+                    <div id="allocationChart">
+                        <p class="placeholder-text">Projection will show allocation breakdown</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.13.3/js/standalone/selectize.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize selectize
+            $('#tickers').selectize({
+                maxItems: 5,
+                plugins: ['remove_button'],
+                create: false,
+                onItemAdd: function() {
+                    $('#formError').hide();
+                },
+                render: {
+                    item: function(data, escape) {
+                        return '<div class="item">' + escape(data.text.split(' (')[0]) + '</div>';
+                    }
+                }
+            });
+
+            // Update days display
+            $('#days').on('input', function() {
+                $('#daysValue').text(this.value + ' days');
+            });
+
+            // Form submission handler
+            $('#stockPredictionForm').submit(async function(e) {
+                e.preventDefault();
+                
+                const tickers = $('#tickers').val();
+                const investment = $('#investment').val();
+                const days = $('#days').val();
+                
+                // Clear previous errors
+                $('#formError, #apiError').hide().empty();
+                
+                // Validate inputs
+                if (!tickers || tickers.length === 0) {
+                    $('#formError').text('Please select at least one stock').show();
+                    return;
+                }
+                
+                if (investment < 100) {
+                    $('#formError').text('Minimum investment is $100').show();
+                    return;
+                }
+                
+                // Show loading state
+                const btn = $('.predict-btn');
+                btn.html('<i class="fas fa-spinner fa-spin"></i> Analyzing...').prop('disabled', true);
+                
+                try {
+                    const response = await fetch('/predict_stock_portfolio', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            tickers: tickers,
+                            investment: parseFloat(investment),
+                            days: parseInt(days)
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Prediction failed');
+                    }
+                    
+                    // Update UI with results
+                    updateResults(data);
+                    
+                } catch (error) {
+                    $('#apiError').text(error.message).show();
+                    console.error('Error:', error);
+                } finally {
+                    btn.html('<i class="fas fa-search-dollar"></i> Predict Portfolio').prop('disabled', false);
+                }
+            });
+            
+            function updateResults(data) {
+                // Update your results here
+                $('#initialInvestment').text('$' + data.investment.toLocaleString());
+                $('#projectedValue').text('$' + data.final_value.toLocaleString());
+                
+                const returnPercent = ((data.final_value - data.investment) / data.investment * 100).toFixed(2);
+                $('#projectedReturn').text(returnPercent + '%')
+                    .removeClass('positive negative')
+                    .addClass(returnPercent > 0 ? 'positive' : 'negative');
+                
+                if (data.projection_plot) {
+                    $('#projectionImage')
+                        .attr('src', `data:image/png;base64,${data.projection_plot}`)
+                        .show();
+                    $('#projectionChart .placeholder-text').hide();
+                }
+                
+                updateAllocationChart(data.tickers || tickers, data.investment);
+            }
+            
+            function updateAllocationChart(tickers, investment) {
+                // Your allocation chart update logic
+            }
+        });
+    </script>
+</body>
+</html>

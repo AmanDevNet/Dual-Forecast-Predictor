@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Price Prediction | Financial Forecast Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/house.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-home"></i> House Price Prediction</h1>
+            <nav>
+                <a href="/house" class="active"><i class="fas fa-home"></i> House</a>
+                <a href="/stock"><i class="fas fa-chart-line"></i> Stocks</a>
+            </nav>
+        </header>
+
+        <main class="content">
+            <div class="prediction-form">
+                <h2><i class="fas fa-calculator"></i> Enter Property Details</h2>
+                <form id="housePredictionForm">
+                    <div class="form-group">
+                        <label for="median_income"><i class="fas fa-money-bill-wave"></i> Median Income ($):</label>
+                        <input type="number" id="median_income" name="median_income" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="house_age"><i class="fas fa-calendar-alt"></i> House Age (years):</label>
+                        <input type="number" id="house_age" name="house_age" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="avg_rooms"><i class="fas fa-door-open"></i> Average Rooms:</label>
+                        <input type="number" id="avg_rooms" name="avg_rooms" step="0.1" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="avg_bedrooms"><i class="fas fa-bed"></i> Average Bedrooms:</label>
+                        <input type="number" id="avg_bedrooms" name="avg_bedrooms" step="0.1" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="population"><i class="fas fa-users"></i> Population:</label>
+                        <input type="number" id="population" name="population" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="latitude"><i class="fas fa-globe-americas"></i> Latitude:</label>
+                        <input type="number" id="latitude" name="latitude" step="0.000001" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="longitude"><i class="fas fa-globe-americas"></i> Longitude:</label>
+                        <input type="number" id="longitude" name="longitude" step="0.000001" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="projection_years"><i class="fas fa-chart-line"></i> Projection Years:</label>
+                        <select id="projection_years" name="projection_years">
+                            <option value="1">1 Year</option>
+                            <option value="2">2 Years</option>
+                            <option value="3" selected>3 Years</option>
+                            <option value="5">5 Years</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="predict-btn">
+                        <i class="fas fa-search-dollar"></i> Predict Price
+                    </button>
+                </form>
+            </div>
+
+            <div class="results-container">
+                <div class="prediction-result" id="predictionResult">
+                    <div class="result-header">
+                        <h2><i class="fas fa-search-dollar"></i> Prediction Result</h2>
+                        <div class="price-badge" id="priceBadge">
+                            <span id="predictedPrice">$---</span>
+                        </div>
+                    </div>
+
+                    <div class="projection-chart">
+                        <h3><i class="fas fa-project-diagram"></i> Price Projection</h3>
+                        <div id="projectionChart">
+                            <p class="placeholder-text">Submit the form to see price projection</p>
+                            <img id="projectionImage" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="model-info">
+                    <h3><i class="fas fa-info-circle"></i> About This Model</h3>
+                    <p>Our house price prediction uses advanced machine learning (XGBoost) trained on California housing data with:</p>
+                    <ul>
+                        <li><i class="fas fa-check-circle"></i> Median income and squared income</li>
+                        <li><i class="fas fa-check-circle"></i> Rooms per bedroom ratio</li>
+                        <li><i class="fas fa-check-circle"></i> Population density</li>
+                        <li><i class="fas fa-check-circle"></i> Geographic coordinates</li>
+                    </ul>
+                    <p>Projections show estimated price trends based on historical patterns.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('housePredictionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            const predictBtn = document.querySelector('.predict-btn');
+            predictBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Predicting...';
+            predictBtn.disabled = true;
+            
+            // Get form data
+            const formData = {
+                median_income: document.getElementById('median_income').value,
+                house_age: document.getElementById('house_age').value,
+                avg_rooms: document.getElementById('avg_rooms').value,
+                avg_bedrooms: document.getElementById('avg_bedrooms').value,
+                population: document.getElementById('population').value,
+                latitude: document.getElementById('latitude').value,
+                longitude: document.getElementById('longitude').value,
+                projection_years: document.getElementById('projection_years').value
+            };
+            
+            // Make API request
+            fetch('/predict_house_price', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update predicted price
+                    document.getElementById('predictedPrice').textContent = `$${data.predicted_price.toLocaleString()}`;
+                    
+                    // Update projection chart
+                    const projectionImg = document.getElementById('projectionImage');
+                    projectionImg.src = `data:image/png;base64,${data.projection_plot}`;
+                    projectionImg.style.display = 'block';
+                    projectionImg.alt = 'House price projection chart';
+                    
+                    // Hide placeholder text
+                    document.querySelector('#projectionChart .placeholder-text').style.display = 'none';
+                    
+                    // Highlight price badge based on trend
+                    const priceBadge = document.getElementById('priceBadge');
+                    priceBadge.className = 'price-badge';
+                    if (data.projection_trend === 'up') {
+                        priceBadge.classList.add('trend-up');
+                    } else if (data.projection_trend === 'down') {
+                        priceBadge.classList.add('trend-down');
+                    } else {
+                        priceBadge.classList.add('trend-neutral');
+                    }
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while making the prediction.');
+            })
+            .finally(() => {
+                // Reset button
+                predictBtn.innerHTML = '<i class="fas fa-search-dollar"></i> Predict Price';
+                predictBtn.disabled = false;
+            });
+        });
+
+        // Sample values for testing
+        function fillSampleData() {
+            document.getElementById('median_income').value = 3.5;
+            document.getElementById('house_age').value = 15;
+            document.getElementById('avg_rooms').value = 5.5;
+            document.getElementById('avg_bedrooms').value = 2.8;
+            document.getElementById('population').value = 1200;
+            document.getElementById('latitude').value = 34.05;
+            document.getElementById('longitude').value = -118.25;
+        }
+
+        // Uncomment for testing
+        // fillSampleData();
+    </script>
+</body>
+</html>
