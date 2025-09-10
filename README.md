@@ -3,9 +3,9 @@
 This is a Flask-based machine learning web application that predicts **house prices** and estimates **stock portfolio values** using trained models. 
 The app provides users with visual predictions through interactive charts and simple input forms.
 
-## 🔹 What It Does
+##  What It Does
 
-### 🏠 House Price Prediction
+###  House Price Prediction
 - Predicts house price based on:
   - Median income
   - House age
@@ -15,30 +15,16 @@ The app provides users with visual predictions through interactive charts and si
 - Shows price projection for up to 3 years
 - Model used: RandomForestRegressor and XGBoost (trained and working)
 
-### 📈 Stock Portfolio Forecast (⚠️ In Progress)
+###  Stock Portfolio Forecast (⚠ In Progress)
 - Lets users select popular stocks (AAPL, MSFT, GOOG, etc.)
 - Takes investment amount and prediction days
 - Aims to project future value and allocation
 - Model used: LSTM (trained and working)
-- ⚠️ **Currently not working** due to model loading issues (under fix)
+- **Currently not working** due to model loading issues (under fix)
 
-## 📁 Folder Structure
-project-root/
-│
-├── app.py # Flask backend
-├── train_house_model.py # Trains house price model
-├── train_stock_model.py # Trains stock models (LSTM)
-│
-├── models/ # Contains .h5 and .pkl models
-├── static/
-│ ├── css/ # CSS files
-│ └── images/ # Output graphs
-│
-├── templates/
-│ ├── house_prediction.html
-│ └── stock_prediction.html
 
-## ▶️ How to Run
+
+## How to Run
 
 1. Clone the repository:
    ```bash
@@ -72,6 +58,6 @@ Stock Price(----Under Working----)
 ![image](https://github.com/user-attachments/assets/11770a1c-80dd-4e52-a225-08f4bf5d2363)
 ![image](https://github.com/user-attachments/assets/6aa1e620-a6c1-4878-a179-8efe8afaedd7)
 
-👨‍💻 Author
+ Author
 Aman Sharma
 LinkedIn :- www.linkedin.com/in/aman-sharma-842b66318
